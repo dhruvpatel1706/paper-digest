@@ -65,15 +65,23 @@ def test_load_all_skips_corrupt_files(tmp_path):
 def test_search_matches_titles_tags_and_insights(tmp_path):
     save(
         "p1",
-        _summary(title="Retrieval augmented generation", tags=["rag", "nlp"]),
+        _summary(title="Retrieval augmented generation", tags=["rag", "nlp", "dense"]),
         history_dir=tmp_path,
     )
     save(
         "p2",
-        _summary(title="Transformer scaling laws", tags=["scaling"], insight="RAG was not tested"),
+        _summary(
+            title="Transformer scaling laws",
+            tags=["scaling", "training", "llm"],
+            insight="RAG was not tested",
+        ),
         history_dir=tmp_path,
     )
-    save("p3", _summary(title="Kubernetes operator", tags=["k8s"]), history_dir=tmp_path)
+    save(
+        "p3",
+        _summary(title="Kubernetes operator", tags=["k8s", "ops", "infra"]),
+        history_dir=tmp_path,
+    )
 
     hits = search("rag", history_dir=tmp_path)
     # Both p1 and p2 mention "rag" (p1 in title+tags, p2 in insight).

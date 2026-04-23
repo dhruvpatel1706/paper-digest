@@ -1,6 +1,6 @@
 """paper-digest — arXiv URL or PDF → structured summary via Claude."""
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 from paper_digest.models import Summary
 from paper_digest.summarize import summarize

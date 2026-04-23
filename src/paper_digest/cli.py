@@ -8,9 +8,11 @@ import sys
 import typer
 from rich.console import Console
 from rich.panel import Panel
+from rich.prompt import Prompt
 from rich.table import Table
 
 from paper_digest import __version__
+from paper_digest.chat import PaperChat
 from paper_digest.extract import ExtractError, extract_text
 from paper_digest.fetch import FetchError, fetch_pdf_bytes
 from paper_digest.summarize import DEFAULT_MODEL, summarize
@@ -18,7 +20,7 @@ from paper_digest.summarize import DEFAULT_MODEL, summarize
 app = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
-    help="Turn an arXiv URL/ID or PDF file into a structured summary.",
+    help="Turn an arXiv URL/ID or PDF file into a structured summary (with optional interactive Q&A).",
 )
 
 console = Console()
@@ -54,6 +56,15 @@ def digest(
         "--json",
         help="Print the raw JSON summary instead of the pretty card.",
     ),
+    chat: bool = typer.Option(
+        False,
+        "--chat",
+        help=(
+            "After the summary, enter an interactive follow-up Q&A loop. "
+            "The full paper text is prompt-cached so every question after the first "
+            "is cheap and fast."
+        ),
+    ),
     version: bool = typer.Option(
         False,
         "--version",
@@ -63,7 +74,7 @@ def digest(
         help="Show version and exit.",
     ),
 ) -> None:
-    """Summarize a paper."""
+    """Summarize a paper. Optional --chat enters an interactive follow-up Q&A session."""
     with console.status("[cyan]Fetching paper...", spinner="dots"):
         try:
             pdf = fetch_pdf_bytes(source)
@@ -92,6 +103,9 @@ def digest(
 
     _print_pretty(summary)
 
+    if chat:
+        _run_chat(text, summary, model)
+
 
 def _print_pretty(summary) -> None:  # type: ignore[no-untyped-def]
     header = f"[bold]{summary.title}[/bold]\n[dim]{', '.join(summary.authors)}[/dim]"
@@ -107,6 +121,40 @@ def _print_pretty(summary) -> None:  # type: ignore[no-untyped-def]
     table.add_row("Limitations", summary.limitations)
     table.add_row("Tags", " ".join(f"[dim]#{t}[/dim]" for t in summary.tags))
     console.print(table)
+
+
+def _run_chat(paper_text, summary, model: str) -> None:  # type: ignore[no-untyped-def]
+    console.print()
+    console.print(
+        Panel.fit(
+            "[dim]Ask follow-up questions about this paper. "
+            "Type /quit or press Ctrl-D to exit.[/dim]",
+            border_style="cyan",
+        )
+    )
+    try:
+        chat = PaperChat(paper_text, summary, model=model)
+    except Exception as exc:
+        err_console.print(f"[red]Could not start chat:[/red] {exc}")
+        raise typer.Exit(1)
+
+    while True:
+        try:
+            question = Prompt.ask("[yellow]You[/yellow]").strip()
+        except (EOFError, KeyboardInterrupt):
+            console.print("\n[dim](ended)[/dim]")
+            break
+        if not question:
+            continue
+        if question.lower() in {"/quit", "/exit", "/q"}:
+            break
+        with console.status("[cyan]Thinking...", spinner="dots"):
+            try:
+                reply = chat.ask(question)
+            except Exception as exc:
+                err_console.print(f"[red]Error:[/red] {exc}")
+                continue
+        console.print(f"\n[cyan]Claude:[/cyan] {reply}\n")
 
 
 if __name__ == "__main__":

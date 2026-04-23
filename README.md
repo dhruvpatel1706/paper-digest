@@ -1,9 +1,11 @@
 # paper-digest
 
-**arXiv URL or PDF → structured summary, in one command.**
+**arXiv URL or PDF → structured summary → interactive follow-up Q&A, in one command.**
 
 Drops a paper into Claude with adaptive thinking and a schema-constrained output, and returns:
 `problem / method / key insight / results / limitations / tags`. No hallucinated numbers, no jargon soup, no five-paragraph ChatGPT reply. Built for technical readers deciding whether to commit 45 minutes to the full paper.
+
+**v0.2 adds interactive follow-up Q&A.** After the summary, `--chat` drops you into a grounded Q&A loop — ask anything about the paper and get the answer from its actual text, not the model's prior. The full paper is prompt-cached, so every question after the first is cheap and fast.
 
 ```
 $ paper-digest 2305.13048
@@ -75,6 +77,13 @@ paper-digest 2305.13048 --model claude-sonnet-4-6
 
 # truncate very long papers (default: 50 pages)
 paper-digest 2305.13048 --max-pages 20
+
+# NEW in v0.2: summary + interactive follow-up Q&A
+paper-digest 2305.13048 --chat
+#   > what's the dataset size?
+#   > how did they compute the attention replacement?
+#   > what would break if you trained at 70B scale?
+#   > /quit
 ```
 
 ---
@@ -110,7 +119,7 @@ CI (GitHub Actions) runs on Python 3.10 / 3.11 / 3.12.
 
 ## Roadmap
 
-- [ ] v0.2 — interactive follow-up Q&A loop (ask "what's the dataset size?" after the summary)
+- [x] **v0.2 — interactive follow-up Q&A loop grounded in the paper text (prompt-cached)**
 - [ ] v0.3 — support conference submission sites (OpenReview, ACL Anthology) as input
 - [ ] v0.4 — summarize a reading list (arxiv IDs in a file) and emit a markdown digest
 - [ ] v0.5 — vector-cache past summaries for "find the paper where X was proposed"

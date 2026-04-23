@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
+from pathlib import Path
 
 import typer
 from rich.console import Console
@@ -12,6 +13,7 @@ from rich.prompt import Prompt
 from rich.table import Table
 
 from paper_digest import __version__
+from paper_digest.batch import parse_reading_list, render_digest, run_batch
 from paper_digest.chat import PaperChat
 from paper_digest.extract import ExtractError, extract_text
 from paper_digest.fetch import FetchError, fetch_pdf_bytes
@@ -155,6 +157,50 @@ def _run_chat(paper_text, summary, model: str) -> None:  # type: ignore[no-untyp
                 err_console.print(f"[red]Error:[/red] {exc}")
                 continue
         console.print(f"\n[cyan]Claude:[/cyan] {reply}\n")
+
+
+@app.command("batch")
+def batch_cmd(
+    list_file: Path = typer.Argument(
+        ...,
+        exists=True,
+        readable=True,
+        help="File with one paper reference per line. Comments (#) and blank lines ignored.",
+    ),
+    model: str = typer.Option(DEFAULT_MODEL, "--model", "-m"),
+    max_pages: int = typer.Option(50, "--max-pages", min=1),
+    output: Path = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Write the combined digest to this path (markdown). Default: stdout.",
+    ),
+) -> None:
+    """Summarize every paper in a reading list and emit a single markdown digest.
+
+    Failures are collected and listed at the bottom of the digest — one paper's
+    timeout or bad URL won't abort the run.
+    """
+    refs = parse_reading_list(list_file)
+    if not refs:
+        err_console.print(f"[yellow]No references found in {list_file}[/yellow]")
+        raise typer.Exit(0)
+
+    total = len(refs)
+    console.print(f"[dim]Processing {total} paper{'s' if total != 1 else ''}...[/dim]")
+
+    def _progress(i: int, n: int, ref: str) -> None:
+        console.print(f"[dim]  [{i}/{n}][/dim] {ref}")
+
+    items = run_batch(refs, model=model, max_pages=max_pages, progress=_progress)
+    digest = render_digest(items)
+
+    if output:
+        output.write_text(digest, encoding="utf-8")
+        succeeded = sum(1 for it in items if it.summary is not None)
+        console.print(f"\n[green]Wrote digest to {output}[/green] ({succeeded}/{total} succeeded)")
+    else:
+        sys.stdout.write(digest)
 
 
 if __name__ == "__main__":

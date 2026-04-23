@@ -63,7 +63,13 @@ paper-digest 2305.13048
 # arXiv abs/pdf URL
 paper-digest https://arxiv.org/abs/2305.13048
 
-# direct PDF URL
+# OpenReview (forum or pdf link — v0.3)
+paper-digest https://openreview.net/forum?id=AbCdEf_123
+
+# ACL Anthology landing or PDF link (v0.3)
+paper-digest https://aclanthology.org/2023.acl-long.42/
+
+# direct PDF URL (falls back to anything that returns a PDF)
 paper-digest https://proceedings.mlr.press/.../paper.pdf
 
 # local file
@@ -120,7 +126,7 @@ CI (GitHub Actions) runs on Python 3.10 / 3.11 / 3.12.
 ## Roadmap
 
 - [x] **v0.2 — interactive follow-up Q&A loop grounded in the paper text (prompt-cached)**
-- [ ] v0.3 — support conference submission sites (OpenReview, ACL Anthology) as input
+- [x] **v0.3 — OpenReview and ACL Anthology URL support**
 - [ ] v0.4 — summarize a reading list (arxiv IDs in a file) and emit a markdown digest
 - [ ] v0.5 — vector-cache past summaries for "find the paper where X was proposed"
 

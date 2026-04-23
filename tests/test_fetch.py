@@ -48,3 +48,27 @@ def test_resolve_local_path(tmp_path) -> None:
 def test_resolve_garbage() -> None:
     with pytest.raises(FetchError):
         resolve_input("this is not a paper")
+
+
+def test_resolve_openreview_forum_url() -> None:
+    kind, normalized = resolve_input("https://openreview.net/forum?id=AbCdEf_123-XYZ")
+    assert kind == "openreview"
+    assert normalized == "AbCdEf_123-XYZ"
+
+
+def test_resolve_openreview_pdf_url() -> None:
+    kind, normalized = resolve_input("https://openreview.net/pdf?id=X9Y8Z7")
+    assert kind == "openreview"
+    assert normalized == "X9Y8Z7"
+
+
+def test_resolve_acl_landing_url() -> None:
+    kind, normalized = resolve_input("https://aclanthology.org/2023.acl-long.42/")
+    assert kind == "acl"
+    assert normalized == "2023.acl-long.42"
+
+
+def test_resolve_acl_pdf_url() -> None:
+    kind, normalized = resolve_input("https://aclanthology.org/2023.emnlp-main.7.pdf")
+    assert kind == "acl"
+    assert normalized == "2023.emnlp-main.7"

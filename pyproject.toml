@@ -1,7 +1,7 @@
 [project]
 name = "paper-digest"
-version = "0.2.0"
-description = "CLI that turns an arXiv URL or PDF into a structured summary plus an optional interactive follow-up Q&A session."
+version = "0.3.0"
+description = "CLI: arXiv / OpenReview / ACL Anthology / PDF -> structured summary + optional interactive Q&A."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }

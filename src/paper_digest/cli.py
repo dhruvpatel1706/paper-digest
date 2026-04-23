@@ -261,5 +261,50 @@ def history_search_cmd(
         console.print(f"[yellow]insight:[/yellow] {s.key_insight}")
 
 
+@app.command("watch")
+def watch_cmd(
+    folder: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=False,
+        dir_okay=True,
+        readable=True,
+        help="Folder to watch. New PDFs dropped here get auto-digested.",
+    ),
+    model: str = typer.Option(DEFAULT_MODEL, "--model", "-m"),
+    max_pages: int = typer.Option(50, "--max-pages", min=1),
+    debounce: float = typer.Option(
+        2.0,
+        "--debounce",
+        min=0.1,
+        help="Seconds to wait after last write before summarizing. "
+        "Bump this if big PDFs are getting picked up mid-download.",
+    ),
+) -> None:
+    """Watch a folder and auto-digest any PDFs that land in it.
+
+    Skips anything already in your local history (matched by absolute path),
+    so restarting the watcher doesn't resummarize the whole folder.
+    """
+    try:
+        from paper_digest.watch import watch
+    except ImportError:
+        err_console.print(
+            "[red]The watch subcommand needs `watchdog`. "
+            "Install with [cyan]pip install 'paper-digest[watch]'[/cyan].[/red]"
+        )
+        raise typer.Exit(1)
+
+    def _log(msg: str) -> None:
+        # Tiny indirection so output stays consistent with the rest of the CLI
+        console.print(msg)
+
+    try:
+        watch(folder, model=model, max_pages=max_pages, debounce_s=debounce, on_log=_log)
+    except ValueError as exc:
+        err_console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(1)
+
+
 if __name__ == "__main__":
     app()

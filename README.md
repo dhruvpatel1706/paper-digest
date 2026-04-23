@@ -90,6 +90,14 @@ paper-digest 2305.13048 --chat
 #   > how did they compute the attention replacement?
 #   > what would break if you trained at 70B scale?
 #   > /quit
+
+# NEW in v0.6: watch a folder, auto-digest any PDFs that land in it.
+# Requires the `[watch]` extra: pip install -e ".[watch]"
+paper-digest watch ~/Downloads/papers
+#   watching /Users/you/Downloads/papers for new PDFs ...
+#   ✓ attention-is-all-you-need.pdf: Attention Is All You Need
+#     → Replace recurrence with pure self-attention; match LSTMs at a fraction of the training cost.
+# ^C to stop. Re-starting skips anything already in `paper-digest history`.
 ```
 
 ---

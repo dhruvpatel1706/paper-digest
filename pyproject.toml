@@ -1,0 +1,63 @@
+[project]
+name = "paper-digest"
+version = "0.1.0"
+description = "CLI that turns an arXiv URL or PDF into a structured summary (problem / method / results / limitations) via Claude."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Dhruv Patel", email = "dhruv17062000@gmail.com" },
+]
+keywords = ["arxiv", "research", "llm", "claude", "summarization", "cli"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "anthropic>=0.40.0",
+    "httpx>=0.27.0",
+    "pypdf>=4.0.0",
+    "pydantic>=2.5.0",
+    "typer>=0.12.0",
+    "rich>=13.7.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=5.0.0",
+    "black>=24.0.0",
+    "isort>=5.13.0",
+    "flake8>=7.0.0",
+]
+
+[project.scripts]
+paper-digest = "paper_digest.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/dhruvpatel1706/paper-digest"
+Issues = "https://github.com/dhruvpatel1706/paper-digest/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/paper_digest"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.isort]
+profile = "black"
+line_length = 100

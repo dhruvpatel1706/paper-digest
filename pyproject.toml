@@ -1,7 +1,7 @@
 [project]
 name = "paper-digest"
-version = "0.4.0"
-description = "CLI: arXiv / OpenReview / ACL Anthology / PDF -> structured summary + optional interactive Q&A."
+version = "0.5.0"
+description = "CLI: arXiv / OpenReview / ACL / PDF -> structured summary, optional interactive Q&A, reading-list batch, searchable summary history."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }

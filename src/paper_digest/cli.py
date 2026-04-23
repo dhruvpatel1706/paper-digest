@@ -13,6 +13,7 @@ from rich.prompt import Prompt
 from rich.table import Table
 
 from paper_digest import __version__
+from paper_digest import history as history_store
 from paper_digest.batch import parse_reading_list, render_digest, run_batch
 from paper_digest.chat import PaperChat
 from paper_digest.extract import ExtractError, extract_text
@@ -97,6 +98,13 @@ def digest(
         except Exception as exc:  # broad: surface anthropic SDK errors cleanly
             err_console.print(f"[red]Summarize failed:[/red] {exc}")
             raise typer.Exit(1)
+
+    # Persist to history (v0.5). Best-effort — don't fail the command just
+    # because the history dir was unwritable for some reason.
+    try:
+        history_store.save(source, summary)
+    except OSError as exc:
+        err_console.print(f"[dim](history save skipped: {exc})[/dim]")
 
     if output_json:
         json.dump(summary.model_dump(), sys.stdout, indent=2)
@@ -195,12 +203,62 @@ def batch_cmd(
     items = run_batch(refs, model=model, max_pages=max_pages, progress=_progress)
     digest = render_digest(items)
 
+    # Persist each successful summary to the local history (v0.5)
+    for item in items:
+        if item.summary is not None:
+            try:
+                history_store.save(item.source, item.summary)
+            except OSError:
+                pass  # tolerate history failures in batch
+
     if output:
         output.write_text(digest, encoding="utf-8")
         succeeded = sum(1 for it in items if it.summary is not None)
         console.print(f"\n[green]Wrote digest to {output}[/green] ({succeeded}/{total} succeeded)")
     else:
         sys.stdout.write(digest)
+
+
+# ---- v0.5: history subcommands ---------------------------------------------
+
+history_app = typer.Typer(help="Browse and search previously-summarized papers.")
+app.add_typer(history_app, name="history")
+
+
+@history_app.command("list")
+def history_list_cmd(
+    limit: int = typer.Option(20, "--limit", "-n", min=1, help="How many entries to show."),
+) -> None:
+    """Show the most recent summaries (newest first)."""
+    entries = history_store.load_all()
+    if not entries:
+        console.print("[dim]No history yet — run `paper-digest digest ...` first.[/dim]")
+        return
+    table = Table(show_header=True, header_style="bold cyan")
+    table.add_column("when", no_wrap=True)
+    table.add_column("title")
+    table.add_column("source")
+    for e in entries[:limit]:
+        when = e.summarized_at.strftime("%Y-%m-%d")
+        table.add_row(when, e.summary.title, e.source)
+    console.print(table)
+
+
+@history_app.command("search")
+def history_search_cmd(
+    query: str = typer.Argument(..., help="Keywords to search your past summaries."),
+    limit: int = typer.Option(5, "--limit", "-n", min=1),
+) -> None:
+    """Find past summaries by title/tag/insight/problem match."""
+    hits = history_store.search(query, limit=limit)
+    if not hits:
+        console.print(f"[dim]No past summaries matched {query!r}.[/dim]")
+        return
+    for e in hits:
+        s = e.summary
+        console.print(f"\n[bold]{s.title}[/bold]  [dim]({e.source})[/dim]")
+        console.print(f"[dim]{e.summarized_at.strftime('%Y-%m-%d')} · {', '.join(s.tags)}[/dim]")
+        console.print(f"[yellow]insight:[/yellow] {s.key_insight}")
 
 
 if __name__ == "__main__":
